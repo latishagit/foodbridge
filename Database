@@ -1,0 +1,97 @@
+\d donor;
+                                         Table "public.donor"
+   Column   |          Type          | Collation | Nullable |                 Default                 
+------------+------------------------+-----------+----------+-----------------------------------------
+ donor_id   | integer                |           | not null | nextval('donor_donor_id_seq'::regclass)
+ donor_name | character varying(255) |           | not null | 
+ email      | character varying(255) |           | not null | 
+ contact    | numeric(10,0)          |           | not null | 
+ password   | character varying(255) |           | not null | 
+Indexes:
+    "donor_pkey" PRIMARY KEY, btree (donor_id)
+    "donor_contact_key" UNIQUE CONSTRAINT, btree (contact)
+    "donor_email_key" UNIQUE CONSTRAINT, btree (email)
+Referenced by:
+    TABLE "donation" CONSTRAINT "donation_donor_id_fkey" FOREIGN KEY (donor_id) REFERENCES donor(donor_id) ON UPDATE CASCADE ON DELETE CASCADE
+======================================================================================================
+
+\d volunteer;
+                                             Table "public.volunteer"
+     Column     |          Type          | Collation | Nullable |                     Default                     
+----------------+------------------------+-----------+----------+-------------------------------------------------
+ volunteer_name | character varying(255) |           | not null | 
+ email          | character varying(255) |           | not null | 
+ contact        | numeric(10,0)          |           | not null | 
+ password       | character varying(255) |           | not null | 
+ volunteer_id   | integer                |           | not null | nextval('volunteer_volunteer_id_seq'::regclass)
+Indexes:
+    "volunteer_pkey" PRIMARY KEY, btree (volunteer_id)
+    "u_contact" UNIQUE CONSTRAINT, btree (contact)
+    "u_email" UNIQUE CONSTRAINT, btree (email)
+===================================================================================================
+
+ \d donation;
+                                             Table "public.donation"
+     Column      |          Type          | Collation | Nullable |                    Default                    
+-----------------+------------------------+-----------+----------+-----------------------------------------------
+ donation_id     | integer                |           | not null | nextval('donation_donation_id_seq'::regclass)
+ food_details    | character varying(255) |           | not null | 
+ expiry_date     | date                   |           | not null | 
+ quantity        | integer                |           | not null | 
+ approval        | character varying(20)  |           |          | 'pending'::character varying
+ pickup_latitude | double precision       |           | not null | 
+ longitude       | double precision       |           | not null | 
+ donor_id        | integer                |           | not null | 
+Indexes:
+    "donation_pkey" PRIMARY KEY, btree (donation_id)
+Check constraints:
+    "donation_approval_check" CHECK (approval::text = ANY (ARRAY['pending'::character varying, 'approved'::character varying, 'not approved'::character varying]::text[]))
+    "donation_quantity_check" CHECK (quantity > 0)
+Foreign-key constraints:
+    "donation_donor_id_fkey" FOREIGN KEY (donor_id) REFERENCES donor(donor_id) ON UPDATE CASCADE ON DELETE CASCADE
+
+
+==============================================================================
+
+\d recipient;
+                                             Table "public.recipient"
+     Column     |          Type          | Collation | Nullable |                     Default                     
+----------------+------------------------+-----------+----------+-------------------------------------------------
+ recipient_name | character varying(255) |           | not null | 
+ email          | character varying(255) |           | not null | 
+ contact        | numeric(10,0)          |           | not null | 
+ password       | character varying(255) |           | not null | 
+ latitude       | double precision       |           | not null | 
+ longitude      | double precision       |           | not null | 
+ recipient_id   | integer                |           | not null | nextval('recipient_recipient_id_seq'::regclass)
+Indexes:
+    "recipient_pkey" PRIMARY KEY, btree (recipient_id)
+    "u_mail" UNIQUE CONSTRAINT, btree (email)
+    "unique_contact" UNIQUE CONSTRAINT, btree (contact)
+
+
+==============================================================================
+
+\d tasks;
+                                         Table "public.tasks"
+    Column    |         Type          | Collation | Nullable |                Default                 
+--------------+-----------------------+-----------+----------+----------------------------------------
+ task_id      | integer               |           | not null | nextval('tasks_task_id_seq'::regclass)
+ volunteer_id | integer               |           | not null | 
+ recipient_id | integer               |           | not null | 
+ donation_id  | integer               |           | not null | 
+ status       | character varying(20) |           |          | 'pending'::character varying
+Indexes:
+    "tasks_pkey" PRIMARY KEY, btree (task_id)
+Check constraints:
+    "tasks_status_check" CHECK (status::text = ANY (ARRAY['pending'::character varying, 'active'::character varying, 'completed'::character varying]::text[]))
+Foreign-key constraints:
+    "tasks_donation_id_fkey" FOREIGN KEY (donation_id) REFERENCES donation(donation_id)
+    "tasks_recipient_id_fkey" FOREIGN KEY (recipient_id) REFERENCES recipient(recipient_id) ON UPDATE CASCADE ON DELETE CASCADE
+    "tasks_volunteer_id_fkey" FOREIGN KEY (volunteer_id) REFERENCES volunteer(volunteer_id) ON UPDATE CASCADE ON DELETE CASCADE
+    
+    
+ =====================================================
+ create table admin(admin_id serial primary key,admin_name varchar(255) not null,email varchar(255) not null unique,contact numeric(10) not null unique,password varchar(255) not null);
+
+
