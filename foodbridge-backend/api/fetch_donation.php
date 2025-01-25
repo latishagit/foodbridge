@@ -13,24 +13,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 require '../config.php';
 
-$dbconn = connectDatabase();
-$data = json_decode(file_get_contents("php://input"), true);
-$status = $data['approval'];
-$query = "SELECT * FROM donation where approval='$status';";
-$result = pg_query($dbconn, $query);
-//console.log($result);
-if ($result) {
+try {
+    $dbconn = connectDatabase();
+    $data = json_decode(file_get_contents("php://input"), true);
+    $status = $data['approval'];
+
+    $query = "SELECT 
+                  d.*, 
+                  r.donor_name, 
+                  r.contact 
+              FROM donation d 
+              JOIN donor r 
+              ON d.donor_id = r.donor_id 
+              WHERE d.approval = $1";
+
+    $result = pg_query_params($dbconn, $query, [$status]);
+
+    if (!$result) {
+        throw new Exception("Database query failed: " . pg_last_error($dbconn));
+    }
+
     $donations = [];
     while ($row = pg_fetch_assoc($result)) {
         $donations[] = $row;
     }
+
     echo json_encode(["donations" => $donations]);
-} else {
+} catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(["message" => "Error fetching donations"]);
+    echo json_encode(["message" => "Error fetching donations", "error" => $e->getMessage()]);
 }
-
-
-
 ?>
 

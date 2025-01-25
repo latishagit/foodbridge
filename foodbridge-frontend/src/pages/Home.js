@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 
 const Home = () => {
 	const [donations, setDonations] = useState([]);
-	
+	const navigate = useNavigate();
     useEffect(() => {
         const fetchDonations = async () => {
                 try {
@@ -83,8 +83,8 @@ const Home = () => {
                       </Marker>
                     </MapContainer>
                   </div>
-              <a href="#" className="btn btn-primary">Accept</a>
-              <a href="#" className="btn btn-primary m-2 mb-2">Volunteer</a>
+              <button className="btn btn-primary" onClick={()=>navigate('/accept')}>Accept</button>
+              <button className="btn btn-primary m-2 mb-2" onClick={()=>navigate('/volunteer')}>Volunteer</button>
             </div>
           </div>
         </div>

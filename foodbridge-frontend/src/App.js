@@ -7,6 +7,8 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Donate from './pages/Donate';
 import EditProfile from './pages/profile';
+import AcceptDonation from './pages/accept';
+import VolunteerDonation from './pages/volunteer';
 import './App.css';  
 import api from './api';
 
@@ -105,6 +107,8 @@ const [isLoggedIn, setIsLoggedIn] = useState(false);
         />
            <Route path="/alogin" element={<ALogin />} />
             <Route path="/profile" element={<EditProfile />} />
+            <Route path="/accept" element={isLoggedIn ?<AcceptDonation />:<Navigate to ="/login"/>} />
+            <Route path="/volunteer" element={<VolunteerDonation />} />
         </Routes>
       </div>
     </Router>
