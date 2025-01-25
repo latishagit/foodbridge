@@ -24,18 +24,36 @@ if (!isset($data['email'], $data['password'])) {
 
 $dbconn = connectDatabase();
 $email = pg_escape_string($dbconn, $data['email']); 
-$query = "SELECT * FROM users WHERE email = '$email'";
-$result = pg_query($dbconn, $query);
 
+
+$tables = ['donor','volunteer','recipient'];
+$role = null;
+
+foreach($tables as $table)
+{
+	$query = "SELECT * FROM $table WHERE email = '$email'";
+	$result = pg_query($dbconn, $query);
+	if ($result && pg_num_rows($result) > 0) {
+		$role = $table;
+		$nameField = $table."_name";
+		$idField = $table."_id";
+		break;
+	}
+}
+if (!$role) {
+    http_response_code(401);
+    echo json_encode(["message" => "User not found in any role table"]);
+    exit;
+}
 if ($result && pg_num_rows($result) > 0) {
-    $user = pg_fetch_assoc($result);
+$user = pg_fetch_assoc($result);
     if (password_verify($data['password'], $user['password'])) {
         http_response_code(200);
         echo json_encode([
-            "id" => $user['id'],
-            "name" => $user['name'],
+            "id" => $user[$idField],
+            "name" => $user[$nameField],
             "email" => $user['email'],
-             "role" => $user['role'],
+             "role" => $role,
             "message" => "Login successful"
         ]);
     } else {

@@ -13,22 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 require '../config.php';
 
-$data = json_decode(file_get_contents("php://input"), true);
-
-if (!isset($data['donor_id'])) {
-    http_response_code(400);
-    echo json_encode(["message" => "Missing donor ID"]);
-    exit;
-}
 $dbconn = connectDatabase();
-$donorId = $data['donor_id'];
-$role = $data['role'];
-
-if($role==='donor')
-{
-$query = "SELECT * FROM donation WHERE donor_id = $donorId";
+$data = json_decode(file_get_contents("php://input"), true);
+$status = $data['approval'];
+$query = "SELECT * FROM donation where approval='$status';";
 $result = pg_query($dbconn, $query);
-
+//console.log($result);
 if ($result) {
     $donations = [];
     while ($row = pg_fetch_assoc($result)) {
@@ -39,23 +29,8 @@ if ($result) {
     http_response_code(500);
     echo json_encode(["message" => "Error fetching donations"]);
 }
-}
-else
-{
-$query = "SELECT * FROM tasks WHERE volunteer_id = $donorId";
-$result = pg_query($dbconn, $query);
 
-if ($result) {
-    $donations = [];
-    while ($row = pg_fetch_assoc($result)) {
-        $donations[] = $row;
-    }
-    echo json_encode(["donations" => $donations]);
-} else {
-    http_response_code(500);
-    echo json_encode(["message" => "Error fetching tasks"]);
-}	
-}
+
 
 ?>
 
