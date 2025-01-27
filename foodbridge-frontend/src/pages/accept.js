@@ -76,6 +76,7 @@ const AcceptDonation = () => {
        console.log("Response:", response);
       console.log("Location updated:", response.data);
       alert("Recipient location updated successfully!");
+      setTimeout(() => navigate('/dashboard'), 3000); 
     } catch (error) {
       console.error("Error updating location:", error);
       alert("Failed to update location.");

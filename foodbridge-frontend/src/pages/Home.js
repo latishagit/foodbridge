@@ -84,7 +84,7 @@ const Home = () => {
                     </MapContainer>
                   </div>
               <button className="btn btn-primary" onClick={()=>navigate('/accept')}>Accept</button>
-              <button className="btn btn-primary m-2 mb-2" onClick={()=>navigate('/volunteer')}>Volunteer</button>
+             {/*<button className="btn btn-primary m-2 mb-2" onClick={()=>navigate('/volunteer')}>Volunteer</button>*/}
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ if ($result) {
     echo json_encode(["message" => "Failed to update location"]);
 }
 
-$query1 = "INSERT INTO tasks(volunteer_id,recipient_id,donation_id) VALUES(0,$recipientId,$donationId); ";
+$query1 = "UPDATE tasks SET recipient_id = $recipientId where donation_id = $donationId; ";
 $result1 = pg_query($dbconn, $query1);
 
 if ($result1) {

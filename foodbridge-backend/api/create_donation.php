@@ -31,15 +31,40 @@ $status = 'pending';
 $expiry_date = pg_escape_string($data['expiry_date']);
 
 $query = "INSERT INTO donation (food_details, expiry_date, quantity, approval, pickup_latitude, longitude, donor_id) 
-          VALUES ('$food_details', '$expiry_date', $quantity, '$status',$pickup_latitude,$pickup_longitude,$donor_id)";
+          VALUES ('$food_details', '$expiry_date', $quantity, '$status',$pickup_latitude,$pickup_longitude,$donor_id) RETURNING donation_id";
 $result = pg_query($dbconn, $query);
 
 if ($result) {
+	$donation = pg_fetch_assoc($result);
+	$donation_id = $donation['donation_id'];
     http_response_code(201);
     echo json_encode(["message" => "Donation created successfully"]);
 } else {
     http_response_code(500);
     echo json_encode(["message" => "Error creating donation"]);
+}
+
+$vquery = "SELECT volunteer_id from volunteer where volunteer_id not in (SELECT volunteer_id from tasks);";
+$vresult = pg_query($dbconn, $vquery);
+
+
+if ($vresult && pg_num_rows($vresult) > 0) {
+    $volunteer = pg_fetch_assoc($vresult);
+    $volunteer_id = $volunteer['volunteer_id'];
+
+    $query1 = "INSERT INTO tasks (volunteer_id, donation_id) VALUES ($volunteer_id, $donation_id)";
+    $result1 = pg_query($dbconn, $query1);
+
+    if ($result1) {
+        http_response_code(201);
+        echo json_encode(["message" => "Task created successfully"]);
+    } else {
+        http_response_code(500);
+        echo json_encode(["message" => "Error creating task"]);
+    }
+} else {
+    http_response_code(500);
+    echo json_encode(["message" => "No available volunteers"]);
 }
 ?>
 
