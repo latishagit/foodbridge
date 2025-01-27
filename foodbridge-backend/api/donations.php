@@ -42,7 +42,28 @@ if ($result) {
 }
 else
 {
-$query = "SELECT * FROM tasks WHERE volunteer_id = $donorId";
+$query = 
+"SELECT 
+    d.*,
+    dn.donor_name,
+    dn.contact AS donor_contact,
+    r.recipient_name,
+    r.contact AS recipient_contact,
+    r.latitude AS recipient_latitude,
+    r.longitude AS recipient_longitude,
+    t.status,
+    t.task_id
+FROM 
+    donation d
+LEFT JOIN 
+    donor dn ON d.donor_id = dn.donor_id
+LEFT JOIN 
+    tasks t ON d.donation_id = t.donation_id
+LEFT JOIN 
+    recipient r ON t.recipient_id = r.recipient_id
+WHERE 
+    t.recipient_id IS NOT NULL
+    AND t.volunteer_id = $donorId;";
 $result = pg_query($dbconn, $query);
 
 if ($result) {
