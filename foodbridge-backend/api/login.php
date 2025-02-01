@@ -26,7 +26,7 @@ $dbconn = connectDatabase();
 $email = pg_escape_string($dbconn, $data['email']); 
 
 
-$tables = ['donor','volunteer','recipient'];
+$tables = ['donor','volunteer','recipient','admin'];
 $role = null;
 
 foreach($tables as $table)
@@ -47,7 +47,9 @@ if (!$role) {
 }
 if ($result && pg_num_rows($result) > 0) {
 $user = pg_fetch_assoc($result);
-    if (password_verify($data['password'], $user['password'])) {
+    if($role==='admin')
+    {
+    	 if ($data['password']===$user['password']) {
         http_response_code(200);
         echo json_encode([
             "id" => $user[$idField],
@@ -56,11 +58,31 @@ $user = pg_fetch_assoc($result);
              "role" => $role,
             "message" => "Login successful"
         ]);
-    } else {
+    	}
+    	else {
         http_response_code(401);
         echo json_encode(["message" => "Invalid password"]);
     }
-} else {
+    	
+    }
+    else{ 
+    if(password_verify($data['password'], $user['password'])) {
+        http_response_code(200);
+        echo json_encode([
+            "id" => $user[$idField],
+            "name" => $user[$nameField],
+            "email" => $user['email'],
+             "role" => $role,
+            "message" => "Login successful"
+        ]);
+    	}
+    	else
+    	{
+    		http_response_code(401);
+        	echo json_encode(["message" => "Invalid password"]);
+    	}
+    
+}} else {
     http_response_code(401);
     echo json_encode(["message" => "Invalid email or password"]);
 }

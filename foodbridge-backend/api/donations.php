@@ -26,7 +26,71 @@ $role = $data['role'];
 
 if($role==='donor')
 {
-$query = "SELECT * FROM donation WHERE donor_id = $donorId";
+$query = 
+"SELECT DISTINCT
+    d.donation_id,
+    d.food_details,
+    d.expiry_date,
+    d.quantity,
+    d.approval,
+    d.pickup_latitude,
+    d.longitude,
+    d.donor_id,
+    t.status AS task_status,
+    v.volunteer_name,
+    v.contact AS volunteer_contact
+FROM 
+    donation d
+LEFT JOIN 
+    tasks t ON d.donation_id = t.donation_id
+LEFT JOIN 
+    volunteer v ON t.volunteer_id = v.volunteer_id
+WHERE 
+    d.donor_id = $donorId;
+";
+$result = pg_query($dbconn, $query);
+
+if ($result) {
+    $donations = [];
+    while ($row = pg_fetch_assoc($result)) {
+        $donations[] = $row;
+    }
+    echo json_encode(["donations" => $donations]);
+} else {
+    http_response_code(500);
+    echo json_encode(["message" => "Error fetching donations"]);
+}
+}
+else if($role==='recipient')
+{
+$query = 
+"SELECT DISTINCT
+    d.donation_id,
+    d.food_details,
+    d.expiry_date,
+    d.quantity,
+    d.approval,
+    d.pickup_latitude,
+    d.longitude,
+    d.donor_id,
+    dn.donor_name,
+    dn.contact AS donor_contact,
+    t.status AS task_status,
+    v.volunteer_name,
+    v.contact AS volunteer_contact
+FROM 
+    tasks t
+JOIN 
+    donation d ON t.donation_id = d.donation_id
+JOIN 
+    donor dn ON d.donor_id = dn.donor_id
+LEFT JOIN 
+    volunteer v ON t.volunteer_id = v.volunteer_id
+WHERE 
+    t.recipient_id = $donorId
+    AND d.approval = 'approved';
+
+";
 $result = pg_query($dbconn, $query);
 
 if ($result) {

@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import ALogin from './pages/ALogin';
+import ADashboard from './pages/adashboard';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Donate from './pages/Donate';
 import EditProfile from './pages/profile';
 import AcceptDonation from './pages/accept';
 import VolunteerDonation from './pages/volunteer';
+import ContactUs from './pages/contact';
 import './App.css';  
 import api from './api';
 
@@ -86,9 +87,17 @@ const [isLoggedIn, setIsLoggedIn] = useState(false);
         <li className="nav-item">
           <Link className="nav-link" to="/contact">Contact Us</Link>
         </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/alogin">Admin</Link>
-        </li>
+        {!isLoggedIn ? (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">Admin Login  &nbsp;&nbsp;</Link>
+                </li>
+              </>
+            ) : (
+              <li className="nav-item">
+                <Link className="nav-link" to="/adashboard" >Admin Dashboard</Link>
+              </li>
+            )}     
       </ul>
     </div>
   </div>
@@ -101,11 +110,13 @@ const [isLoggedIn, setIsLoggedIn] = useState(false);
       <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/adashboard" element={<ADashboard />} />
+           <Route path="/contact" element={<ContactUs />} />
           <Route
           path="/donate"
           element={isLoggedIn ? <Donate /> : <Navigate to="/login" />}
         />
-           <Route path="/alogin" element={<ALogin />} />
+           
             <Route path="/profile" element={<EditProfile />} />
             <Route path="/accept" element={isLoggedIn ?<AcceptDonation />:<Navigate to ="/login"/>} />
             <Route path="/volunteer" element={<VolunteerDonation />} />

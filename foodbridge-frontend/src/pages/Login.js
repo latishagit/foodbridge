@@ -24,7 +24,15 @@ const Login = ({ setIsLoggedIn }) => {
                 };
                 setUserToLocalStorage(user);
                 setIsLoggedIn(true);
-                navigate('/dashboard');
+                if(user.role==='admin')
+                {
+                	navigate('/adashboard');
+                }
+                else
+                {
+                	navigate('/dashboard');
+                }
+                
             }
         } catch (error) {
             console.error("Login failed:", error);

@@ -32,7 +32,13 @@ if ($result && pg_num_rows($result) > 0) {
     $user = pg_fetch_assoc($result);
     if ($data['password']=== $user['password']) {
         http_response_code(200);
-        echo json_encode(["message" => "Login successful"]);
+         echo json_encode([
+            "id" => $user['admin_id'],
+            "name" => $user['admin_name'],
+            "email" => $user['email'],
+             "contact" =>$user['contact'],
+            "message" => "Login successful"
+        ]);
     } else {
         http_response_code(401);
         echo json_encode(["message" => "Invalid password"]);

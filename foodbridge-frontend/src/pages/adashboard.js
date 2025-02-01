@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 
-const Dashboard = () => {
+const ADashboard = () => {
 		const [username,setUsername]=useState('');
     const [donations, setDonations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -201,5 +201,5 @@ const completeTask = async (taskId) => {
     );
 };
 
-export default Dashboard;
+export default ADashboard;
 
