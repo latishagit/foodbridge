@@ -1,38 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { getUserFromLocalStorage } from '../utils/localStorageUtils';
 import api from '../api';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 
 const ADashboard = () => {
 		const [username,setUsername]=useState('');
-    const [donations, setDonations] = useState([]);
+    const [tables, setTables] = useState([]);
+     const [newRecord, setNewRecord] = useState('');
+    const [tableData, setTableData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isVolunteer, setIsVolunteer] = useState(false);
-    const [isDonor, setIsDonor] = useState(false);
+     const [selectedTable, setSelectedTable] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchDonations = async () => {
+        const fetchTables = async () => {
             const user = getUserFromLocalStorage();
             console.log("Retrieved user:", user); 
             setUsername(user.name);
-            if(user.role==='volunteer')
-            {
-            	setIsVolunteer(true);
-            }
-            if(user.role==='donor')
-            {
-            	setIsDonor(true);
-            }
+           
             if (user && user.id) {
                 try {
-                    const response = await api.post('/donations.php', { donor_id: user.id ,role: user.role});
+                    const response = await api.post('/tables.php');
                     console.log("Response:",response.data);
-                    setDonations(response.data.donations || []);
+                    setTables(response.data.tables || []);
                 } catch (error) {
-                    console.error("Error fetching donations:", error);
+                    console.error("Error fetching tables:", error);
                 }
                 setIsLoading(false);
             } else {
@@ -41,162 +33,124 @@ const ADashboard = () => {
             }
         };
 
-        fetchDonations();
+        fetchTables();
     }, [navigate]);
 
-const completeTask = async (taskId) => {
-  try {
-    const response = await api.post('/updateStatus.php', { task_id: taskId });
-    if (response.data.success) {
-      console.log(response.data.message);
+	 const displayTable = async (table) => {
+    setSelectedTable(table);
+    try {
+        const response = await api.post('/fetchTable.php', { table_name: table });
 
-      setDonations((prevDonations) =>
-        prevDonations.map((donation) =>
-          donation.task_id === taskId ? { ...donation, status: 'completed' } : donation
-        )
-      );
-    } else {
-      console.error(response.data.message);
+        console.log("API Response:", response.data); 
+
+        if (response.data.success && response.data.tabledata.length > 0) {
+            setTableData(response.data.tabledata);
+        } else {
+            console.log("No data found for table:", table);
+            setTableData([]); 
+        }
+    } catch (error) {
+        console.log("Error fetching table data:", error);
+        setTableData([]);
     }
-  } catch (error) {
-    console.error("Error updating task status:", error);
-  }
 };
 
+	const addRecord = async (e) => {
+     e.preventDefault();
+    try {
+        const response = await api.post('/insert.php', { table_name: selectedTable, record_data:newRecord });
 
+        console.log("API Response:", response.data); 
+
+        if (response.data.success) {
+            console.log("Record insert API success");
+            displayTable(selectedTable);
+        } else {
+            console.log("No data found for table:");
+
+        }
+    } catch (error) {
+        console.log("Error in API:", error);
+    
+    }
+};
+
+	
+	
     if (isLoading) {
         return <div>Loading...</div>;
     }
 
     return (
         <div className="container mt-5">
-        <div className="container mt-2 d-flex flex-row justify-content-evenly">
-            <h1>Welcome! {username}</h1>
-            <button className="btn btn-primary" onClick={()=>navigate('/profile')}>Edit profile</button>
-         </div>
-        { isVolunteer?(
-        <>
-        <h3 className="mt-4">Your Tasks</h3>
-          {donations.length > 0 ? (
-                <ul className="list-group">
-                    {donations.map((donation) => (
+        	 <div className="d-flex">
+        	 <div className="w-20 border p-2">
+        		<h3>All Tables</h3>
+        		<ul style={{listStyleType:'none'}}>
+        			{tables.map((table,index)=>
+    					(
+    					<>
+    						<li key={index} onClick={() => displayTable(table)}  style={{ cursor: 'pointer' }}>{table}</li>
+    						<hr />
+    						</>
+    					))
+        			}
+        		</ul>
+        		  </div>
+        		    <div className="w-85 border p-3">
+        		    
+        		    <h5>Table Data: {selectedTable || "Select a Table"}</h5>
+                    {tableData.length > 0 ? (
+                    
+                        <table className="table table-responsive table-bordered">
+                            <thead>
+                                <tr>
+                                    {Object.keys(tableData[0]).map((column, index) => (
+                                        <th key={index}>{column}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {tableData.map((row, rowIndex) => (
+                                    <tr key={rowIndex}>
+                                        {Object.values(row).map((value, colIndex) => (
+                                            <td key={colIndex}>{value}</td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                        
-                        <li key={donation.id} className="list-group-item border-4">
-                            <strong>Task id:</strong> {donation.task_id} &nbsp;&nbsp;
-                            <strong>Donation id:</strong> {donation.donation_id}<br />
-                            <strong>Status:</strong> {donation.status}<br />
-                            <strong>Food Details:</strong> {donation.food_details}<br />
-                            <strong>Expiry Date:</strong> {donation.expiry_date}<br />
-                            <strong>Food Quantity:</strong> {donation.quantity}<br />
-                            <strong>Donor Name:</strong> {donation.donor_name}<br />
-                            <strong>Donor Contact:</strong> {donation.donor_contact}<br />
-                            <strong>Pickup location:</strong>
-                              {/* Map Container */}
-                              
-                  <div style={{ height: '30vh', minHeight: '200px', maxHeight: '400px' }}>
-                    <MapContainer
-                      center={[donation.pickup_latitude, donation.longitude]}
-                      zoom={13}
-                      scrollWheelZoom={false}
-                      style={{ height: '100%', width: '100%' }}
-                    >
-                      <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      <Marker
-                        position={[donation.pickup_latitude, donation.longitude]}
-                      >
-                        <Popup>
-                          Pickup Location: Latitude {donation.pickup_latitude}, Longitude{' '}
-                          {donation.longitude}
-                        </Popup>
-                      </Marker>
-                    </MapContainer>
-                  </div><br />
-                  <strong>Recipient Name:</strong> {donation.recipient_name}<br />
-                   <strong>Recipient Contact:</strong> {donation.recipient_contact}<br />
-                   <strong>Delivery location:</strong> 
-                            {/* Map Container */}
-                  <div style={{ height: '30vh', minHeight: '200px', maxHeight: '400px' }}>
-                    <MapContainer
-                      center={[donation.recipient_latitude, donation.recipient_longitude]}
-                      zoom={13}
-                      scrollWheelZoom={false}
-                      style={{ height: '100%', width: '100%' }}
-                    >
-                      <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      <Marker
-                        position={[donation.recipient_latitude, donation.recipient_longitude]}
-                      >
-                        <Popup>
-                          Pickup Location: Latitude {donation.recipient_latitude}, Longitude{' '}
-                          {donation.recipient_longitude}
-                        </Popup>
-                      </Marker>
-                    </MapContainer>
-                  </div>
-                 <button className="btn btn-primary" onClick={() => completeTask(donation.task_id)}>Completed</button>
-                        </li>
-                    ))}
-                     
-                </ul>
-            ) : (
-                <p>No tasks found.</p>
-            )}
-            <button className="btn btn-primary mt-3" onClick={() => navigate('/donate')}>
-                Add Task +
-            </button>
-        </>
-        ): isDonor?(  (<><h3 className="mt-4">Your Donations</h3>
-          {donations.length > 0 ? (
-                <ul className="list-group">
-                    {donations.map((donation) => (
-                        <li key={donation.donation_id} className="list-group-item">
-                        	<strong>Donation id:</strong> {donation.donation_id}<br />
-                            <strong>Food Details:</strong> {donation.food_details}<br />
-                            <strong>Quantity:</strong> {donation.quantity}&nbsp;&nbsp;
-                            <strong>Expiry Date:</strong> {donation.expiry_date}   	&nbsp;&nbsp;
-                            <strong>Approval:</strong> {donation.approval}<br />
-                            <strong>Task Status:</strong> {donation.task_status}<br />
-                             <strong>Volunteer Name:</strong> {donation.volunteer_name}<br />
-                              <strong>Volunteer Contact:</strong> {donation.volunteer_contact}<br />
-                            
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p>No donations found.</p>
-            )}
-            <button className="btn btn-primary mt-3" onClick={() => navigate('/donate')}>
-                Add Donation +
-            </button>
-            </>)):(
-              (<><h3 className="mt-4">Your Donations</h3>
-          {donations.length > 0 ? (
-                <ul className="list-group">
-                    {donations.map((donation) => (
-                        <li key={donation.donation_id} className="list-group-item">
-                        	<strong>Donation id:</strong> {donation.donation_id}<br />
-                            <strong>Food Details:</strong> {donation.food_details}<br />
-                            <strong>Quantity:</strong> {donation.quantity}&nbsp;&nbsp;
-                            <strong>Expiry Date:</strong> {donation.expiry_date}   	&nbsp;&nbsp;
-                            <strong>Approval:</strong> {donation.approval}<br />
-                            <strong>Task Status:</strong> {donation.task_status}<br />
-                             <strong>Volunteer Name:</strong> {donation.volunteer_name}<br />
-                              <strong>Volunteer Contact:</strong> {donation.volunteer_contact}<br />
-                            
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p>No donations found.</p>
-            )}
-            
-            </>))
-         
-        }
+                    ) : (
+                        <p>No data available for this table.</p>
+                    )}
+                    <div className="mt-4">
+                     <form onSubmit={addRecord}>
+                    <h3>Add Record</h3>
+                    <select className="form-control">
+                    	{tables.map((table,index)=>
+    					(
+    					<>
+    						<option key={index} onClick={() => displayTable(table)}  style={{ cursor: 'pointer' }}>{table}</option>
+    						<hr />
+    						</>
+    					))
+        			}
+					</select><br/>
+                   
+                    	<input type="text"
+                    	placeholder="Enter comma separated values for record"
+						value={newRecord}
+						onChange={(e)=>setNewRecord(e.target.value)}
+						className="form-control"
+						/>
+						 <button type="submit" className="btn btn-primary mt-2">Add Record</button>
+                    </form>
+                    </div>
+                    
+                    
+        		    </div>
+        	</div>
          </div>
     );
 };
