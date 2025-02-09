@@ -11,7 +11,6 @@ const ADashboard = () => {
     const [formData, setFormData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [primaryKey, setPrimaryKey] = useState('id'); // default fallback
-    const [editingId, setEditingId] = useState(null); // To track if we're editing a record
 
     const navigate = useNavigate();
 
@@ -36,28 +35,34 @@ const ADashboard = () => {
         fetchTables();
     }, [navigate]);
 
-    const displayTable = async (table) => {
-        setSelectedTable(table);
-        try {
-            const response = await api.post('/fetchTable.php', { table_name: table });
-            if (response.data.success) {
-                setTableData(response.data.tabledata);
-                if (response.data.tabledata.length > 0) {
-                    const keys = Object.keys(response.data.tabledata[0]);
-                    const pk = keys.find(key => key.endsWith('_id'));
-                    setPrimaryKey(pk);
+const displayTable = async (table) => {
+  setSelectedTable(table);
+  try {
+    const response = await api.post('/fetchTable.php', { table_name: table });
+    if (response.data.success) {
+      setTableData(response.data.tabledata);
+      // Optionally detect primary key from the table data
+      if (response.data.tabledata.length > 0) {
+        // If your backend sends the correct data structure, you might determine
+        // the primary key dynamically or use a mapping based on the table name.
+        console.log("First row keys:", Object.keys(response.data.tabledata[0]));
+        // For example, if you expect a primary key ending with '_id':
+        const keys = Object.keys(response.data.tabledata[0]);
+        const pk = keys.find(key => key.endsWith('_id'));
+        setPrimaryKey(pk);
+        
+        const initialFormData = {};
+        keys.forEach(col => {
+          initialFormData[col] = '';
+        });
+        setFormData(initialFormData);
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching table data:", error);
+  }
+};
 
-                    const initialFormData = {};
-                    keys.forEach(col => {
-                        initialFormData[col] = '';
-                    });
-                    setFormData(initialFormData);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching table data:", error);
-        }
-    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -81,34 +86,31 @@ const ADashboard = () => {
             if (response.data.success) {
                 alert("Record updated successfully!");
                 displayTable(selectedTable);
-                setEditingId(null); // Clear edit mode after update
-                setFormData({});
             }
         } catch (error) {
             console.error("Error updating record:", error);
         }
     };
 
-    const handleEdit = (record) => {
-        setEditingId(record[primaryKey]);  // Set the record ID being edited
-        setFormData(record);               // Populate the form with the record's data
-    };
+   const handleDelete = async (id) => {
+  console.log("Deleting record with id:", id, "from table:", selectedTable);
+  try {
+    const response = await api.delete('/delete.php', {
+      data: { table_name: selectedTable, id }
+    });
+    console.log("Delete response:", response.data);
 
-    const handleDelete = async (id) => {
-        try {
-            const response = await api.delete('/delete.php', {
-                data: { table_name: selectedTable, id }
-            });
-            if (response.data.success) {
-                alert("Record deleted successfully!");
-                displayTable(selectedTable); // Refresh table data
-            } else {
-                alert("Error: " + response.data.message);
-            }
-        } catch (error) {
-            console.error("Error deleting record:", error);
-        }
-    };
+    if (response.data.success) {
+      alert("Record deleted successfully!");
+      displayTable(selectedTable); // Refresh table data
+    } else {
+      alert("Error: " + response.data.message);
+    }
+  } catch (error) {
+    console.error("Error deleting record:", error);
+  }
+};
+
 
     return (
         <div className="container mt-5">
@@ -140,8 +142,9 @@ const ADashboard = () => {
                                             <td key={colIndex}>{value}</td>
                                         ))}
                                         <td>
-                                            <button onClick={() => handleEdit(row)}>Edit</button>
-                                            <button onClick={() => handleDelete(row[primaryKey])}>Delete</button>
+                                           <button onClick={() => handleUpdate(row[primaryKey])}>Update</button>
+<button onClick={() => handleDelete(row[primaryKey])}>Delete</button>
+
                                         </td>
                                     </tr>
                                 ))}
@@ -152,24 +155,11 @@ const ADashboard = () => {
                     )}
                     {selectedTable && (
                         <div>
-                            <h5>{editingId ? "Update Record" : "Insert New Record"}</h5>
+                            <h5>Insert New Record</h5>
                             {Object.keys(formData).map((key, index) => (
-                                <input
-                                    key={index}
-                                    name={key}
-                                    placeholder={key}
-                                    value={formData[key]}
-                                    onChange={handleChange}
-                                />
+                                <input key={index} name={key} placeholder={key} value={formData[key]} onChange={handleChange} />
                             ))}
-                            {editingId ? (
-                                <div>
-                                    <button onClick={() => handleUpdate(editingId)}>Update</button>
-                                    <button onClick={() => { setEditingId(null); setFormData({}); }}>Cancel</button>
-                                </div>
-                            ) : (
-                                <button onClick={handleInsert}>Insert</button>
-                            )}
+                            <button onClick={handleInsert}>Insert</button>
                         </div>
                     )}
                 </div>

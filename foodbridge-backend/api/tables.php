@@ -1,4 +1,4 @@
- <?php
+<?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -10,28 +10,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
-
 require '../config.php';
 $dbconn = connectDatabase();
-function fetchAllTables() {
-    $dbconn = connectDatabase();
-    $query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'";
-    $result = pg_query($dbconn, $query);
-    if (!$result) {
-        echo "No tables in database.\n";
-        exit;
-    }
 
-    $tables = array(); 
-    while ($row = pg_fetch_row($result)) {
-        $tables[] = $row[0]; 
-    }
-    
-    return $tables; 
+$query = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'";
+$result = pg_query($dbconn, $query);
+
+$tables = [];
+while ($row = pg_fetch_assoc($result)) {
+    $tables[] = $row['table_name'];
 }
 
-$tables = fetchAllTables();
-
- echo json_encode(["tables" => $tables]);
-       
+echo json_encode(["tables" => $tables]);
 ?>
+
